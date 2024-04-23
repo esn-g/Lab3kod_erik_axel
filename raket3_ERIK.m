@@ -1,66 +1,73 @@
+% initialvärden
+angle = deg2rad(80);
+e_x_0 = cos(angle)*20;
+e_y_0 = sin(angle)*20;
 
+% tidsinställningar och diskretisering
+t_tot = 10;
+h = 0.001;
+N = t_tot/h;
 
-% Konstanter
+[Y, X] = RungeKutta(@eDeriv, e_x_0, e_y_0, h, N);
 
-m0 = 0.050;    
-k = 0.08;      
-F = 1;         
-g = 9.82;      
-k_x = 0.001;
-k_y = 0.001;
+Y_pos = trapQueen(Y, h);
+X_pos = trapQueen(X, h);
 
+max(Y_pos)
+max(X_pos)
 
-% Omskrivning till ett system av första ordningens diff eq.
-
-% x_prim = v_x;
-% y_prim = v_y;
-
-% hjälp funktioner 
-V = sqrt(v_x^2 + v_y^2);
-phi = atan2(v_y, v_x);
-
-% andra derivatorna
-v_x_prim = (F * cos(phi) - k_x * v_x * V) / m;
-v_y_prim = (F * sin(phi) - k_y * v_y * V - g) / m;
-
-state_vector = [x_prim, y_prim, v_x_prim, v_y_prim];
-
-if t <= 0.08 % medan bränslet varar
-    F_t = 1;
-else
-    F_t = 0;
+function trap_out = trapQueen(vector, h)
+    trap_out = zeros(size(vector)); % allokera 
+    cumulative_sum = 0; % Initialize cumulative sum
+    for i = 1:length(vector)
+        cumulative_sum = cumulative_sum + vector(i); % Add current value to cumulative sum
+        trap_out(i) = cumulative_sum * h; % Multiply cumulative sum by step size and assign to integrated vector
+    end
 end
 
-
-function [t, y] = rungeKuttaSolver(f, t0, y0, tEnd, h)
-    % f - funk tions hand tag för f(t,y)
-    % t0 - start tid
-    % y0 - initi alt värde av y
-    % tEnd - sluttid
-    % h - steglängd
-
-    % Minnesallokering
-    t = t0:h:tEnd;
-    y = zeros(1, length(t));
-    y(1) = y0;
-
-    % Runge-Kutta-metoden
-    for i = 1:(length(t) - 1)
-        % k1 är den initiala lutningen, vilket är lutningen i början av intervallet
-        k1 = h * f(t(i), y(i));
-        
-        % k2 är lutningen vid intervallets mitt, beräknad med k1 för att uppskatta y vid t + h/2
-        k2 = h * f(t(i) + 0.5 * h, y(i) + 0.5 * k1);
-        
-        % k3 är en annan lutningsuppskattning vid mittintervallet, men nu använder vi k2 för att uppskatta y vid t + h/2
-        k3 = h * f(t(i) + 0.5 * h, y(i) + 0.5 * k2);
-        
-        % k4 är lutningen vid intervallets slut, beräknad med k3 för att uppskatta y vid t + h
-        k4 = h * f(t(i) + h, y(i) + k3);
-        
-        % Kombinera de viktade medelvärdena av k1, k2, k3 och k4 för att beräkna nästa värde av y
-        y(i+1) = y(i) + (k1 + 2*k2 + 2*k3 + k4) / 6;
+function [e_x_prim, e_y_prim] = eDeriv(x_i, y_i, t)
+    k_x = 0.001;    % ?? ?
+    k_y = 0.001;    % konstant
+    g = 9.82;       % graav
+    m_0 = 0.05;     % startmassa
+    k = 0.08;       % någon viktkonstant???
+    
+    % hastighetsmagnitud
+    V = sqrt((x_i^2) + (y_i^2));
+    % vinkel
+    phi = atan2(y_i,x_i);
+    
+    % medan bränslet varar, KRAFT
+    if t <= 0.08 
+        F = 1;
+    else
+        F = 0;
     end
+    
+    % minskning av massa
+    m = m_0 - (k*t);
+    
+    % beräkning av derivator
+    e_x_prim = (F * cos(phi) - k_x * x_i * V) / m;
+    e_y_prim = (F * sin(phi) - k_y * y_i * V - g) / m;
 
-    % Returnera arrayerna av t och y värden
+end
+
+function [X, Y] = RungeKutta(f, x0, y0, h, N)
+    X = zeros(1, N+1);
+    Y = zeros(1, N+1);
+    X(1) = x0;
+    Y(1) = y0;
+    t = 0;
+    for i = 1:N
+        K1 = f(X(i), Y(i),t);
+        K2 = f(X(i) + h/2, Y(i) + h/2 * K1, t);
+        K3 = f(X(i) + h/2, Y(i) + h/2 * K2, t);
+        K4 = f(X(i) + h, Y(i) + h * K3, t);
+        y_next = Y(i) + h/6 * (K1 + 2*K2 + 2*K3 + K4);
+        x_next = X(i) + h;
+        X(i+1) = x_next;
+        Y(i+1) = y_next;
+        t = i*h;
+    end
 end
