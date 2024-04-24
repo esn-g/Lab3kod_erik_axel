@@ -4,17 +4,33 @@ e_x_0 = cos(angle)*20;
 e_y_0 = sin(angle)*20;
 
 % tidsinställningar och diskretisering
-t_tot = 10;
+t_tot = 7;
 h = 0.001;
 N = t_tot/h;
 
-[Y, X] = RungeKutta(@eDeriv, e_x_0, e_y_0, h, N);
+[X, Y, pos_X, pos_Y] = RungeKutta(@eDeriv, e_x_0, e_y_0, h, N);
 
 Y_pos = trapQueen(Y, h);
 X_pos = trapQueen(X, h);
 
 max(Y_pos)
 max(X_pos)
+
+figure;
+subplot(2, 1, 1);
+plot(linspace(0, t_tot, N+1), pos_Y);
+xlabel('time (s)');
+ylabel('Y Position');
+title('Rocket Trajectory');
+grid on;
+
+subplot(2, 1, 2);
+plot(linspace(0, t_tot, N+1), sqrt(X.^2 + Y.^2));
+xlabel('Time (s)');
+ylabel('Speed (m/s)');
+title('Rocket Speed vs Time');
+grid on;
+
 
 function trap_out = trapQueen(vector, h)
     trap_out = zeros(size(vector)); % allokera 
@@ -45,29 +61,35 @@ function [e_x_prim, e_y_prim] = eDeriv(x_i, y_i, t)
     end
     
     % minskning av massa
-    m = m_0 - (k*t);
+    m = max(m_0 - (k*t), 0.001);  % Prevent mass from going zero or negative by setting a lower limit.
+
     
     % beräkning av derivator
     e_x_prim = (F * cos(phi) - k_x * x_i * V) / m;
-    e_y_prim = (F * sin(phi) - k_y * y_i * V - g) / m;
+    e_y_prim = (((F * sin(phi) - k_y * y_i * V) / m) -g);
 
 end
 
-function [X, Y] = RungeKutta(f, x0, y0, h, N)
+function [X, Y, posX, posY] = RungeKutta(f, vx0, vy0, h, N)
     X = zeros(1, N+1);
     Y = zeros(1, N+1);
-    X(1) = x0;
-    Y(1) = y0;
+    posX = zeros(1, N+1);  % Position in x
+    posY = zeros(1, N+1);  % Position in y
+    X(1) = vx0;
+    Y(1) = vy0;
+    posX(1) = 0; % Initial position x
+    posY(1) = 0; % Initial position y
     t = 0;
     for i = 1:N
-        K1 = f(X(i), Y(i),t);
-        K2 = f(X(i) + h/2, Y(i) + h/2 * K1, t);
-        K3 = f(X(i) + h/2, Y(i) + h/2 * K2, t);
-        K4 = f(X(i) + h, Y(i) + h * K3, t);
-        y_next = Y(i) + h/6 * (K1 + 2*K2 + 2*K3 + K4);
-        x_next = X(i) + h;
-        X(i+1) = x_next;
-        Y(i+1) = y_next;
-        t = i*h;
+        [K1x, K1y] = f(X(i), Y(i), t);
+        [K2x, K2y] = f(X(i) + h/2 * K1x, Y(i) + h/2 * K1y, t + h/2);
+        [K3x, K3y] = f(X(i) + h/2 * K2x, Y(i) + h/2 * K2y, t + h/2);
+        [K4x, K4y] = f(X(i) + h * K3x, Y(i) + h * K3y, t + h);
+        X(i+1) = X(i) + (h/6) * (K1x + 2*K2x + 2*K3x + K4x);
+        Y(i+1) = Y(i) + (h/6) * (K1y + 2*K2y + 2*K3y + K4y);
+        posX(i+1) = posX(i) + h * X(i);  % Integrate velocity to get position
+        posY(i+1) = posY(i) + h * Y(i);  % Integrate velocity to get position
+        t = t + h;
     end
 end
+
