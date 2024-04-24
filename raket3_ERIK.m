@@ -4,11 +4,24 @@ e_x_0 = cos(angle)*20;
 e_y_0 = sin(angle)*20;
 
 % tidsinställningar och diskretisering
-t_tot = 10;
-h = 0.001;
+t_tot = 4;
+h = 0.0001;
 N = t_tot/h;
 
-[Y, X] = RungeKutta(@eDeriv, e_x_0, e_y_0, h, N);
+% Create time vector
+time_vector = (0:h:t_tot);
+[t45, state] = ode45(@eDeriv45, [0 N], [e_x_0;e_y_0]);
+
+N = 10; % Set the end time
+
+% Extract x and y positions
+X = state(:, 1);
+Y = state(:, 2);
+
+%[X, Y] = RungeKutta(@eDeriv, e_x_0, e_y_0, h, N);
+
+b4_int_Y = max(Y)
+b4_int_X = max(X)
 
 Y_pos = trapQueen(Y, h);
 X_pos = trapQueen(X, h);
@@ -16,16 +29,62 @@ X_pos = trapQueen(X, h);
 max(Y_pos)
 max(X_pos)
 
+% after_int_Y = max(Y_pos)
+% after_int_X = max(X_pos)
+
+% Plot X_pos and Y_pos vectors over time
+plot(t45, Y_pos, 'r-');
+xlabel('x'); % Set x-axis label
+ylabel('y'); % Set y-axis label
+title('Rocket Position'); % Add title
+grid on; % Add grid
+
 function trap_out = trapQueen(vector, h)
     trap_out = zeros(size(vector)); % allokera 
-    cumulative_sum = 0; % Initialize cumulative sum
+    summa = 0; % Initialize cumulative sum
     for i = 1:length(vector)
-        cumulative_sum = cumulative_sum + vector(i); % Add current value to cumulative sum
-        trap_out(i) = cumulative_sum * h; % Multiply cumulative sum by step size and assign to integrated vector
+        summa = summa + vector(i); % Add current value to cumulative sum
+        trap_out(i) = summa * h; % Multiply cumulative sum by step size and assign to integrated vector
     end
 end
 
+function e_deriv = eDeriv45(t, state)
+    x_i = state(1);
+    y_i = state(2);
+
+    k_x = 0.001;    % ?? ?
+    k_y = 0.001;    % konstant
+    g = 9.82;       % gravitation
+    m_0 = 0.05;     % startmassa
+    k = 0.08;       % någon viktkonstant???
+
+    % hastighetsmagnitud
+    V = sqrt((x_i^2) + (y_i^2));
+    % vinkel
+    phi = atan2(y_i, x_i);
+
+    % medan bränslet varar, KRAFT
+    if t <= 0.08
+        m = m_0 - (k * t);
+        F = 1;
+    else
+        m = m_0 - k*0.08; % slutgiltiga vikten 0.0436
+        F = 0;
+    end
+
+    % minskning av massa
+    
+
+    % beräkning av derivator
+    e_x_prim = ((F * cos(phi) - k_x * x_i * V) / m);
+    e_y_prim = (((F * sin(phi) - k_y * y_i * V) / m) - g);
+
+    e_deriv = [e_x_prim; e_y_prim];
+end
+
+
 function [e_x_prim, e_y_prim] = eDeriv(x_i, y_i, t)
+    % beräknar derivatorna för egenskriven rungekutta
     k_x = 0.001;    % ?? ?
     k_y = 0.001;    % konstant
     g = 9.82;       % graav
@@ -48,8 +107,8 @@ function [e_x_prim, e_y_prim] = eDeriv(x_i, y_i, t)
     m = m_0 - (k*t);
     
     % beräkning av derivator
-    e_x_prim = (F * cos(phi) - k_x * x_i * V) / m;
-    e_y_prim = (F * sin(phi) - k_y * y_i * V - g) / m;
+    e_x_prim = ((F * cos(phi) - k_x * x_i * V)/m);
+    e_y_prim = (((F * sin(phi) - k_y * y_i * V)/m) - g);
 
 end
 
@@ -68,6 +127,6 @@ function [X, Y] = RungeKutta(f, x0, y0, h, N)
         x_next = X(i) + h;
         X(i+1) = x_next;
         Y(i+1) = y_next;
-        t = i*h;
+        t = t+h;
     end
 end
