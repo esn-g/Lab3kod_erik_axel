@@ -91,4 +91,3 @@ function [X, Y, posX, posY] = RungeKutta(f, vx0, vy0, h, N)
         t = t + h;
     end
 end
-

@@ -1,35 +1,76 @@
+%Fungerade a) och b)
+
 function rocket_simulation
-    % Initial conditions
+    % Initialvilkor
     angle = deg2rad(80);
     e_x_0 = cos(angle) * 20;
     e_y_0 = sin(angle) * 20;
+    
+    % startpunkter
+    pos_x0 = 0;
+    pos_y0 =0;
 
-    % Time settings and discretization
+    % Tids inst and diskretisering
     t_tot = 5;
     h = 0.0001;
     N = t_tot / h;
 
-    % Calculate velocities using the original Runge-Kutta method for velocities
+    % Beräkna hasitgheter men RK4
     [X, Y] = RungeKutta(@eDeriv, e_x_0, e_y_0, h, N);
 
-    % Calculate positions using the new Runge-Kutta method for positions
-    [pos_X, pos_Y] = RungeKuttaPosition(X, Y, 0, 0, h, N);
+    % Beräkna pos med
+    [pos_X, pos_Y] = Integrator(X, Y, 0, 0, h, N);
 
-    % Plotting the results
+
+    % Plotta resulatat
     figure;
     subplot(2, 1, 1);
     plot(pos_X, pos_Y);
     xlabel('X position');
     ylabel('Y Position');
-    title('Rocket Trajectory');
+    title('Raketbana');
     grid on;
 
     subplot(2, 1, 2);
     plot(linspace(0, t_tot, N+1), sqrt(X.^2 + Y.^2));
     xlabel('Time (s)');
     ylabel('Speed (m/s)');
-    title('Rocket Speed vs Time');
+    title('Rockethastighet vs tid');
     grid on;
+
+    %% a)
+    % Max Y
+    max_posY = max(pos_Y);
+    fprintf('a) Max Y Position: %f\n', max_posY);
+
+    %% b)
+    % Y-axel korsande
+    zero_crossings = [];
+    for i = 1:N
+        if pos_Y(i) * pos_Y(i+1) <= 0
+            zero_crossings = [zero_crossings, i];
+        end
+    end
+
+   
+    x_intersections = [];
+    for i = 1:length(zero_crossings)
+        idx = zero_crossings(i);
+        x0 = pos_X(idx);
+        y0 = pos_Y(idx);
+        x1 = pos_X(idx+1);
+        y1 = pos_Y(idx+1);
+
+        t_factor = -y0 / (y1 - y0); % How far between points
+        x_cross = x0 + (x1 - x0) * t_factor; % Linear interpolation
+        x_intersections = [x_intersections, x_cross];
+    end
+
+    fprintf('b) X-skär när Y = 0:\n');
+    disp(x_intersections);
+
+
+
 end
 
 function [X, Y] = RungeKutta(f, vx0, vy0, h, N)
@@ -49,7 +90,7 @@ function [X, Y] = RungeKutta(f, vx0, vy0, h, N)
     end
 end
 
-function [posX, posY] = RungeKuttaPosition(vx, vy, pos_x0, pos_y0, h, N)
+function [posX, posY] = Integrator(vx, vy, pos_x0, pos_y0, h, N)
     posX = zeros(1, N+1);
     posY = zeros(1, N+1);
     posX(1) = pos_x0; % Initial position x
@@ -81,3 +122,4 @@ function [e_x_prim, e_y_prim] = eDeriv(x_i, y_i, t)
     e_x_prim = (F * cos(phi) - k_x * x_i * V) / m;
     e_y_prim = ((F * sin(phi) - k_y * y_i * V) / m) - g;
 end
+
