@@ -4,8 +4,8 @@ e_x_0 = cos(angle)*20;
 e_y_0 = sin(angle)*20;
 
 % tidsinställningar och diskretisering
-t_tot = 4;
-h = 0.0001;
+t_tot = 5;
+h = 0.00001;
 N = t_tot/h;
 
 % Create time vector
