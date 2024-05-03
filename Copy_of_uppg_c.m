@@ -1,49 +1,57 @@
-% ej fungerade c)
 
-function rocket_simulation
-    angle = deg2rad(80);
-    e_x_0 = cos(angle) * 20;
-    e_y_0 = sin(angle) * 20;
-    
-    % start
-    pos_x0 = 0;
-    pos_y0 =0;
+angle = deg2rad(80);
+e_x_0 = cos(angle) * 20;
+e_y_0 = sin(angle) * 20;
 
+% start
+pos_x0 = 0;
+pos_y0 =0;
+
+% inskjut initial
+T = 0.001;  
+x_target = 8.5;
+
+% Gissad F
+F = 0.9; 
+E_last = 2;
+F_last = 1;
+
+for i = 1:10
     % Tid and diskert
     t_tot = 5;
     h = 0.0001;
     N = t_tot / h;
 
-    % inskjut initial
-    T = 0.001;
-    E=0.5;   
-    x_target = 8.5;
-
-    % Gissad F
-    F = 1; 
+    % Runge kutta
+    [X, Y] = RungeKutta(@eDeriv, e_x_0, e_y_0, h, N, F);
     
- 
-    x_n_last = 1;
+    % poisitoner
+    [pos_X, pos_Y] = Integrate(X, Y, 0, 0, h, N);
+    
+    % Detect indices where sign changes
+    idx = find(pos_Y(1:end-1) .* pos_Y(2:end) < 0);
+
+    pos_X_landing = pos_X(idx)
+    
+    
+    % extrahera slut positionen
+    pos_X_landing = pos_X(end);
+    
+    % E blir target funktionen f(x) = pos(F) - x_target = 0 är problemet
+    % som
+    E = pos_X_landing-x_target
+    
+    dFdx = (E_last - E)/(F_last - F);
     F_last = F;
-    for i = 1:3
-        % Runge kutta
-        [X, Y] = RungeKutta(@eDeriv, e_x_0, e_y_0, h, N, F);
+    F = F - E/dFdx
     
-        % poisitoner
-        [pos_X, pos_Y] = Integrate(X, Y, 0, 0, h, N);
-        pos_X_end = pos_X(end);
-        E = abs(pos_X_end-x_target)
-        
-        dFdx = (x_n_last - pos_X_end)/(F_last - F)
-        F = F - pos_X/dFdx
+    E_last = E;
 
-        F_last = F
-        x_n_last = pos_X
-        if abs(E) < abs(T)
-            break
-        end
+    if abs(E) < abs(T)
+        break
     end
 end
+
 
 function [X, Y] = RungeKutta(f, vx0, vy0, h, N, F)
     X = zeros(1, N+1);
@@ -74,16 +82,16 @@ function [posX, posY] = Integrate(vx, vy, pos_x0, pos_y0, h, N)
 end
 
 function [e_x_prim, e_y_prim] = eDeriv(x_i, y_i, t, F)
-    F = F;
+    % F = F;
     k_x = 0.001;
     k_y = 0.001;
     g = 9.82;
     m_0 = 0.05;
     k = 0.08;
-    
+
+    % size(x_i)
     V = sqrt(x_i^2 + y_i^2);
     phi = atan2(y_i, x_i);
-    
     if t <= 0.08
         m = m_0 - (k * t);
         F = F;
