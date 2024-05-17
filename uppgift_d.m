@@ -1,26 +1,35 @@
 format longE
-angle = deg2rad(80);
-e_x_0 = cos(angle) * 20;
-e_y_0 = sin(angle) * 20;
+%e_x_0 = cos(angle) * 20;
+%e_y_0 = sin(angle) * 20;
+
 
 % start
 pos_x0 = 0;
 pos_y0 =0;
 
 % inskjut initial, T TOlerans
-T = 0.00001;  
-x_target = 8.5;
+T = 0.01;  
+x_target = 7.5;
+y_target = 15;
 
 % Gissad F
-F = 0.9; 
-E_last = 2;
+F = 0.1; 
 F_last = 1;
+angle_pre = deg2rad(79);
+angle = angle_pre; %gissad vinkel
+angle_last = deg2rad(89);
+E_x_last = 3;
+E_y_last = 4;
 
-for i = 1:100 
+for i = 1:1
     % Tid and diskert
-    t_tot = 5;
-    h = 0.000001;
+    t_tot = 18;
+    h = 0.00001;
     N = ceil(t_tot / h);
+
+    % vinkelberäkning beror
+    e_x_0 = cos(angle) * 20;
+    e_y_0 = sin(angle) * 20;
    
 
     % Runge kutta
@@ -29,23 +38,42 @@ for i = 1:100
     % poisitoner
     [pos_X, pos_Y] = Integrate(X, Y, 0, 0, h, N);
     
-    % Detect indices where sign changes KOLLA ÖVER 
+    % Detect indices where sign changes KOLLA ÖVER
     idx = find(pos_Y(1:end-1) .* pos_Y(2:end) < 0);
 
-    pos_X_landing = pos_X(idx);
+    pos_X_landing = pos_X(idx)
+    pos_Y_max = max(pos_Y)
     
     % E blir target funktionen f(x) = pos(F) - x_target = 0 är problemet
-    % som
-    E = pos_X_landing-x_target
+    % skapa f(x) = 0 funktioner för newtons metod
+    E_x = pos_X_landing-x_target;
+    E_y = pos_Y_max-y_target;
     
-    dFdx = (E_last - E)/(F_last - F);
+    % funktionsvärdesvektor
+    E = [E_x, E_y]';
     
+    % skapa jacobiankomponenter
+    dG1dF = (E_x_last - E_x)/(F_last - F);
+    dG1dphi = (E_x_last - E_x)/(angle_last - angle);
+    dG2dF = (E_y_last - E_y)/(F_last - F);
+    dG2dphi = (E_y_last - E_y)/(angle_last - angle);
+    
+    % jakobianen
+    J = [dG1dF,dG1dphi; dG2dF,dG2dphi];
+    
+    cond(J)
+    % korrektionsterm enligt Sauer
+    korr = J\E;
+    
+    % spara nuvarande värden innan uppdatering
     F_last = F;
+    E_x_last = E_x;
+    E_y_last = E_y;
+    angle_last = angle;
 
-    F = F - E/dFdx
-    
-    E_last = E;
-
+    % uppdatera F och angle för att hitta bättre lösnig
+    F = F - korr(1)
+    angle = angle - korr(2)
     
     disp(['Iteration: ', num2str(i)]);
     disp(['F: ', num2str(F)]);
@@ -54,12 +82,12 @@ for i = 1:100
     disp(['E_y: ', num2str(E_y)]);
     disp(['pos_X_landing: ', num2str(pos_X_landing)]);
     disp(['pos_Y_max: ', num2str(pos_Y_max)]);
-    disp('----------------------------');
-
 
     if abs(E) < abs(T)
-        disp('hello')
         disp(pos_X_landing)
+        disp(pos_Y_max)
+        disp(F)
+        disp(angle)
         break
     end
 end

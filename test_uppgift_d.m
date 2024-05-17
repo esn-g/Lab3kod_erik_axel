@@ -1,52 +1,58 @@
 format longE
-angle = deg2rad(80);
-e_x_0 = cos(angle) * 20;
-e_y_0 = sin(angle) * 20;
 
-% start
-pos_x0 = 0;
-pos_y0 =0;
+% Initial parameters and tolerances
+T = 0.0001;
+x_target = 7.5;
+y_target = 15;
 
-% inskjut initial, T TOlerans
-T = 0.00001;  
-x_target = 8.5;
-
-% Gissad F
 F = 0.9; 
-E_last = 2;
 F_last = 1;
+angle_pre = deg2rad(80);
+angle = angle_pre;
+angle_last = 1.7;
+E_x_last = 1;
+E_y_last = 1;
 
-for i = 1:100 
-    % Tid and diskert
-    t_tot = 5;
-    h = 0.000001;
+for i = 1:1
+    % Simulation parameters
+    t_tot = 12;
+    h = 0.00001;
     N = ceil(t_tot / h);
-   
 
-    % Runge kutta
+    % Initial velocities
+    e_x_0 = cos(angle) * 20;
+    e_y_0 = sin(angle) * 20;
+
+    % Runge-Kutta integration
     [X, Y] = RungeKutta(@eDeriv, e_x_0, e_y_0, h, N, F);
-    
-    % poisitoner
     [pos_X, pos_Y] = Integrate(X, Y, 0, 0, h, N);
     
-    % Detect indices where sign changes KOLLA ÖVER 
-    idx = find(pos_Y(1:end-1) .* pos_Y(2:end) < 0);
-
+    % Detect landing position
+    idx = find(pos_Y(1:end-1) .* pos_Y(2:end) < 0, 1);
     pos_X_landing = pos_X(idx);
+    pos_Y_max = max(pos_Y);
     
-    % E blir target funktionen f(x) = pos(F) - x_target = 0 är problemet
-    % som
-    E = pos_X_landing-x_target
+    % Calculate errors
+    E_x = pos_X_landing - x_target;
+    E_y = pos_Y_max - y_target;
+    E = [E_x; E_y];
     
-    dFdx = (E_last - E)/(F_last - F);
+    % Jacobian matrix
+    J = [dG1dF, dG1dphi; dG2dF, dG2dphi];
     
+    % Correction term
+    t = J \ (-E);
+    
+    % Update parameters
     F_last = F;
+    E_x_last = E_x;
+    E_y_last = E_y;
+    angle_last = angle;
 
-    F = F - E/dFdx
+    F = F + t(1);
+    angle = angle + t(2);
     
-    E_last = E;
-
-    
+    % Print debug information
     disp(['Iteration: ', num2str(i)]);
     disp(['F: ', num2str(F)]);
     disp(['angle: ', num2str(rad2deg(angle))]);
@@ -55,16 +61,19 @@ for i = 1:100
     disp(['pos_X_landing: ', num2str(pos_X_landing)]);
     disp(['pos_Y_max: ', num2str(pos_Y_max)]);
     disp('----------------------------');
-
-
-    if abs(E) < abs(T)
-        disp('hello')
-        disp(pos_X_landing)
+    
+    % Check for convergence
+    if norm(E) < T
+        disp('Converged');
+        disp(['pos_X_landing: ', num2str(pos_X_landing)]);
+        disp(['pos_Y_max: ', num2str(pos_Y_max)]);
+        disp(['F: ', num2str(F)]);
+        disp(['angle: ', num2str(rad2deg(angle))]);
         break
     end
 end
 
-
+% Runge-Kutta method
 function [X, Y] = RungeKutta(f, vx0, vy0, h, N, F)
     X = zeros(1, N+1);
     Y = zeros(1, N+1);
@@ -82,36 +91,33 @@ function [X, Y] = RungeKutta(f, vx0, vy0, h, N, F)
     end
 end
 
+% Integrate positions from velocities
 function [posX, posY] = Integrate(vx, vy, pos_x0, pos_y0, h, N)
     posX = zeros(1, N+1);
     posY = zeros(1, N+1);
-    posX(1) = pos_x0; % start position x
-    posY(1) = pos_y0; % start position y
+    posX(1) = pos_x0;
+    posY(1) = pos_y0;
     for i = 1:N
         posX(i+1) = posX(i) + h * vx(i);
         posY(i+1) = posY(i) + h * vy(i);
     end
 end
 
+% Derivative function
 function [e_x_prim, e_y_prim] = eDeriv(x_i, y_i, t, F)
-    % F = F;
     k_x = 0.001;
     k_y = 0.001;
     g = 9.82;
     m_0 = 0.05;
     k = 0.08;
-
-    % size(x_i)
     V = sqrt(x_i^2 + y_i^2);
     phi = atan2(y_i, x_i);
     if t <= 0.08
         m = m_0 - (k * t);
-        F = F;
     else
         F = 0;
         m = m_0 - (k * 0.08);
     end
-
     e_x_prim = (F * cos(phi) - k_x * x_i * V) / m;
     e_y_prim = ((F * sin(phi) - k_y * y_i * V) / m) - g;
 end
