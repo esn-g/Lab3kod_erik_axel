@@ -13,16 +13,13 @@ x_target = 7.5;
 y_target = 15;
 
 % Gissad F
-F = 0.1; 
-F_last = 1;
-angle = deg2rad(79); %gissad vinkel
+F = 0; 
+F_last = 0;
+angle_pre = deg2rad(79);
+angle = angle_pre; %gissad vinkel
 angle_last = deg2rad(89);
 E_x_last = 3;
 E_y_last = 4;
-E_last = [E_x_last;E_y_last];
-z = [F;angle];
-z_last = [F_last;angle_last];
-A_last  = eye(2,2);
 
 for i = 1:1
     % Tid and diskert
@@ -36,7 +33,7 @@ for i = 1:1
    
 
     % Runge kutta
-    [X, Y] = RungeKutta(@eDeriv, e_x_0, e_y_0, h, N, z(1));
+    [X, Y] = RungeKutta(@eDeriv, e_x_0, e_y_0, h, N, F);
     
     % poisitoner
     [pos_X, pos_Y] = Integrate(X, Y, 0, 0, h, N);
@@ -52,40 +49,35 @@ for i = 1:1
     E_x = pos_X_landing-x_target;
     E_y = pos_Y_max-y_target;
     
-    % funktionsvärdesvektor E = G
+    % funktionsvärdesvektor
     E = [E_x, E_y]';
     
-    %Broyden beräkningar
-    % stora delta
-    DELTA = E - E_last;
-
-    % lilla delta
-    delta = z-z_last;
-
-    % Broyden
-    A = A_last+(((DELTA-A_Last*delta)*(delta'))/((delta')*delta));
+    % skapa jacobiankomponenter
+    dG1dF = (E_x_last - E_x)/(F_last - F);
+    dG1dphi = (E_x_last - E_x)/(angle_last - angle);
+    dG2dF = (E_y_last - E_y)/(F_last - F);
+    dG2dphi = (E_y_last - E_y)/(angle_last - angle);
     
+    % jakobianen
+    J = [dG1dF,dG1dphi; dG2dF,dG2dphi];
     
+    cond(J)
     % korrektionsterm enligt Sauer
-    korr = inv(A)*E;
+    korr = J\E;
     
     % spara nuvarande värden innan uppdatering
     F_last = F;
     E_x_last = E_x;
     E_y_last = E_y;
     angle_last = angle;
-    z_last = [F_last;angle_last];
-    E_last = [E_x_last;E_y_last];
 
     % uppdatera F och angle för att hitta bättre lösnig
-    F = z_last(1) - korr(1);
-    angle = z_last(2) - korr(2);
-
-    z = [F;angle];
+    F = F - korr(1)
+    angle = angle - korr(2)
     
     disp(['Iteration: ', num2str(i)]);
-    disp(['F: ', num2str(z(1))]);
-    disp(['angle: ', num2str(rad2deg(z(2)))]);
+    disp(['F: ', num2str(F)]);
+    disp(['angle: ', num2str(rad2deg(angle))]);
     disp(['E_x: ', num2str(E_x)]);
     disp(['E_y: ', num2str(E_y)]);
     disp(['pos_X_landing: ', num2str(pos_X_landing)]);
@@ -94,8 +86,8 @@ for i = 1:1
     if abs(E) < abs(T)
         disp(pos_X_landing)
         disp(pos_Y_max)
-        disp(z(1))
-        disp(z(2))
+        disp(F)
+        disp(angle)
         break
     end
 end

@@ -8,15 +8,15 @@ pos_x0 = 0;
 pos_y0 =0;
 
 % inskjut initial, T TOlerans
-T = 0.01;  
+T = 0.0000001;  
 x_target = 7.5;
 y_target = 15;
 
 % Gissad F
-F = 0.1; 
-F_last = 1;
-angle = deg2rad(79); %gissad vinkel
-angle_last = deg2rad(89);
+F = 0; 
+F_last = 0;
+angle = deg2rad(81); %gissad vinkel
+angle_last = deg2rad(80);
 E_x_last = 3;
 E_y_last = 4;
 E_last = [E_x_last;E_y_last];
@@ -24,7 +24,7 @@ z = [F;angle];
 z_last = [F_last;angle_last];
 A_last  = eye(2,2);
 
-for i = 1:2
+for i = 1:100
     % Tid and diskert
     t_tot = 18;
     h = 0.00001;
@@ -43,10 +43,48 @@ for i = 1:2
     
     % Detect indices where sign changes KOLLA ÖVER
     % !!!!!!!!!!!!!!!!!!!!!!!!!
-    idx = find(pos_Y(1:end-1) .* pos_Y(2:end) < 0);
+    % idx = find(pos_Y(1:end-1) .* pos_Y(2:end) < 0);
+    
+    for j = 1:length(pos_Y)-1
+        if pos_Y(j) * pos_Y(j+1) < 0
+            idx = j; % Append the index to idx
+        end
+    end
 
     pos_X_landing = pos_X(idx);
-    pos_Y_max = max(pos_Y);
+    [pos_Y_max, maxIndex] = max(pos_Y);
+    %----------------------------interpolera-----------------------------
+    % välj ett fönster att interpolera i 
+    half_window_size = 20;
+    start_index = max(1, maxIndex - half_window_size);
+    end_index = min(length(pos_X), maxIndex + half_window_size - 1);
+    
+    % välj punkter
+    x_points = pos_X(start_index:end_index);
+    y_points = pos_Y(start_index:end_index);
+    
+    % kvadratisk ansats
+    % y = ax^2 + bx + c
+    A = [x_points'.^2, x_points', ones(length(x_points), 1)];
+    b = y_points';
+    
+    % mkm lösning abc
+    coeffs = A \ b;
+    
+    a = coeffs(1);
+    b = coeffs(2);
+    c = coeffs(3);
+    
+    % hitta x för max pos analytiskt
+    x_vertex = -b / (2 * a);
+    
+    % beräkna y_max
+    y_max_interpolated = a * x_vertex^2 + b * x_vertex + c;
+    
+    % skriv över
+    pos_Y_max = y_max_interpolated;
+    %-------------------------------------------------------------------
+
     
     % E blir target funktionen f(x) = pos(F) - x_target = 0 är problemet
     % skapa f(x) = 0 funktioner för newtons metod
@@ -85,20 +123,25 @@ for i = 1:2
 
     z = [F;angle];
     
-    disp(['Iteration: ', num2str(i)]);
-    disp(['F: ', num2str(z(1))]);
-    disp(['angle: ', num2str(rad2deg(z(2)))]);
-    disp(['E_x: ', num2str(E_x)]);
-    disp(['E_y: ', num2str(E_y)]);
-    disp(['pos_X_landing: ', num2str(pos_X_landing)]);
-    disp(['pos_Y_max: ', num2str(pos_Y_max)]);
-    disp('---------------------------------------------')
+    %isp(['Iteration: ', num2str(i)]);
+    % disp(['F: ', num2str(z(1))]);
+    % disp(['angle: ', num2str(rad2deg(z(2)))]);
+    % disp(['E_x: ', num2str(E_x)]);
+    % disp(['E_y: ', num2str(E_y)]);
+    % disp(['pos_X_landing: ', num2str(pos_X_landing)]);
+    % disp(['pos_Y_max: ', num2str(pos_Y_max)]);
+    % disp('---------------------------------------------')
 
     if abs(E) < abs(T)
-        disp(pos_X_landing)
-        disp(pos_Y_max)
-        disp(z(1))
-        disp(z(2))
+        disp(['Tolerance acuireq'])
+        disp(['Iteration: ', num2str(i)]);
+        disp(['F: ', num2str(z(1),10)]);
+        disp(['angle: ', num2str(rad2deg(z(2)),10)]);
+        disp(['E_x: ', num2str(E_x,10)]);
+        disp(['E_y: ', num2str(E_y,10)]);
+        disp(['pos_X_landing: ', num2str(pos_X_landing,15)]);
+        disp(['pos_Y_max: ', num2str(pos_Y_max,15)]);
+        disp('---------------------------------------------')
         break
     end
 end

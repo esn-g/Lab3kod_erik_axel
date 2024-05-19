@@ -13,8 +13,8 @@ x_target = 7.5;
 y_target = 15;
 
 % Gissad F
-F = 0.1; 
-F_last = 1;
+F = 0; 
+F_last = 0;
 angle_pre = deg2rad(79);
 angle = angle_pre; %gissad vinkel
 angle_last = deg2rad(89);

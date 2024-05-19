@@ -8,7 +8,7 @@ pos_x0 = 0;
 pos_y0 =0;
 
 % inskjut initial, T TOlerans
-T = 0.00001;  
+T = 0.000001;  
 x_target = 8.5;
 
 % Gissad F
@@ -19,7 +19,7 @@ F_last = 1;
 for i = 1:100 
     % Tid and diskert
     t_tot = 5;
-    h = 0.000001;
+    h = 0.00001;
     N = ceil(t_tot / h);
    
 
@@ -30,36 +30,37 @@ for i = 1:100
     [pos_X, pos_Y] = Integrate(X, Y, 0, 0, h, N);
     
     % Detect indices where sign changes KOLLA ÖVER 
-    idx = find(pos_Y(1:end-1) .* pos_Y(2:end) < 0);
+    for j = 1:length(pos_Y)-1
+        if pos_Y(j) * pos_Y(j+1) < 0
+            idx = j; % Append the index to idx
+        end
+    end
 
-    pos_X_landing = pos_X(idx);
+    x0 = pos_X(idx);
+    y0 = pos_Y(idx);
+    x1 = pos_X(idx+1);
+    y1 = pos_Y(idx+1);
+
+    t_factor = -y0 / (y1 - y0); % Linjär interpolation
+    pos_X_landing = x0 + (x1 - x0) * t_factor;
     
     % E blir target funktionen f(x) = pos(F) - x_target = 0 är problemet
     % som
-    E = pos_X_landing-x_target
+    E = pos_X_landing-x_target;
     
     dFdx = (E_last - E)/(F_last - F);
     
     F_last = F;
 
-    F = F - E/dFdx
+    F = F - E/dFdx;
     
     E_last = E;
 
-    
-    disp(['Iteration: ', num2str(i)]);
-    disp(['F: ', num2str(F)]);
-    disp(['angle: ', num2str(rad2deg(angle))]);
-    disp(['E_x: ', num2str(E_x)]);
-    disp(['E_y: ', num2str(E_y)]);
-    disp(['pos_X_landing: ', num2str(pos_X_landing)]);
-    disp(['pos_Y_max: ', num2str(pos_Y_max)]);
-    disp('----------------------------');
-
-
     if abs(E) < abs(T)
-        disp('hello')
-        disp(pos_X_landing)
+        disp(['Iteration: ', num2str(i)]);
+        disp(['F: ', num2str(F)]);
+        disp(['pos_X_landing: ', num2str(pos_X_landing)]);
+        disp('----------------------------');
         break
     end
 end
