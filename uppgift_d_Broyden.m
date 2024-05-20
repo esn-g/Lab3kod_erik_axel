@@ -8,7 +8,7 @@ pos_x0 = 0;
 pos_y0 =0;
 
 % inskjut initial, T TOlerans
-T = 0.0000001;  
+T = 1e-13; %lägsta
 x_target = 7.5;
 y_target = 15;
 
@@ -25,9 +25,10 @@ z_last = [F_last;angle_last];
 A_last  = eye(2,2);
 
 for i = 1:100
+    disp(i)
     % Tid and diskert
-    t_tot = 18;
-    h = 0.00001;
+    t_tot = 4;
+    h = 0.000001; %lägsta
     N = ceil(t_tot / h);
 
     % vinkelberäkning beror
@@ -36,13 +37,15 @@ for i = 1:100
    
 
     % Runge kutta
-    [X, Y] = RungeKutta(@eDeriv, e_x_0, e_y_0, h, N, z(1));
+    % [X, Y] = RungeKutta(@eDeriv, e_x_0, e_y_0, h, N, z(1));
     
+    %Euler
+    [X, Y] = ForwardEuler(@eDeriv, e_x_0, e_y_0, h, N, z(1));
+
     % poisitoner
     [pos_X, pos_Y] = Integrate(X, Y, 0, 0, h, N);
     
     % Detect indices where sign changes KOLLA ÖVER
-    % !!!!!!!!!!!!!!!!!!!!!!!!!
     % idx = find(pos_Y(1:end-1) .* pos_Y(2:end) < 0);
     
     for j = 1:length(pos_Y)-1
@@ -160,6 +163,20 @@ function [X, Y] = RungeKutta(f, vx0, vy0, h, N, F)
         [K4x, K4y] = f(X(i) + h * K3x, Y(i) + h * K3y, t + h, F);
         X(i+1) = X(i) + (h/6) * (K1x + 2*K2x + 2*K3x + K4x);
         Y(i+1) = Y(i) + (h/6) * (K1y + 2*K2y + 2*K3y + K4y);
+        t = t + h;
+    end
+end
+
+function [X, Y] = ForwardEuler(f, vx0, vy0, h, N, F)
+    X = zeros(1, N+1);
+    Y = zeros(1, N+1);
+    X(1) = vx0;
+    Y(1) = vy0;
+    t = 0;
+    for i = 1:N
+        [Kx, Ky] = f(X(i), Y(i), t, F);
+        X(i+1) = X(i) + h * Kx;
+        Y(i+1) = Y(i) + h * Ky;
         t = t + h;
     end
 end

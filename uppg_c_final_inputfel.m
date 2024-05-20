@@ -45,7 +45,7 @@ for param_index = 0:length(params)
     pos_y0 = 0;
 
     % Tolerance
-    T = 0.000001;
+    T = 1e-14;
     x_target = 8.5;
 
     % Initial guess for F
@@ -56,11 +56,14 @@ for param_index = 0:length(params)
     for i = 1:100
         % Time and discretization
         t_tot = 5;
-        h = 0.00001;
+        h = 0.000001;
         N = ceil(t_tot / h);
 
         % Runge-Kutta method
-        [X, Y] = RungeKutta(@(x_i, y_i, t) eDeriv(x_i, y_i, t, g, k_x, k_y, m_0, bryttid, F, k), e_x_0, e_y_0, h, N);
+        % [X, Y] = RungeKutta(@(x_i, y_i, t) eDeriv(x_i, y_i, t, g, k_x, k_y, m_0, bryttid, F, k), e_x_0, e_y_0, h, N);
+
+        %Euler
+        [X, Y] = ForwardEuler(@(x_i, y_i, t) eDeriv(x_i, y_i, t, g, k_x, k_y, m_0, bryttid, F, k), e_x_0, e_y_0, h, N);
 
         % Position integration
         [pos_X, pos_Y] = Integrate(X, Y, 0, 0, h, N);
@@ -100,6 +103,8 @@ for param_index = 0:length(params)
             disp(['Iteration: ', num2str(i)]);
             disp(['F: ', num2str(F)]);
             disp(['pos_X_landing: ', num2str(pos_X_landing)]);
+            error_F = abs(sum(F - original_F));
+            disp(['Inputfel: ', num2str(error_F)]);
             disp('----------------------------');
             break
         end
@@ -127,6 +132,22 @@ function [X, Y] = RungeKutta(f, vx0, vy0, h, N)
         t = t + h;
     end
 end
+
+function [X, Y] = ForwardEuler(f, vx0, vy0, h, N)
+    X = zeros(1, N + 1);
+    Y = zeros(1, N + 1);
+    X(1) = vx0;
+    Y(1) = vy0;
+    t = 0;
+    for i = 1:N
+        [Kx, Ky] = f(X(i), Y(i), t);
+        X(i+1) = X(i) + h * Kx;
+        Y(i+1) = Y(i) + h * Ky;
+        t = t + h;
+    end
+end
+
+
 
 function [posX, posY] = Integrate(vx, vy, pos_x0, pos_y0, h, N)
     posX = zeros(1, N + 1);

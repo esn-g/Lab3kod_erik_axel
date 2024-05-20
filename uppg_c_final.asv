@@ -26,7 +26,7 @@ for i = 1:100
     N = ceil(t_tot / h);
    
 
-    % Euler
+    % Runge kutta
     [X, Y] = ForwardEuler(@eDeriv, e_x_0, e_y_0, h, N, F);
     
     % poisitoner

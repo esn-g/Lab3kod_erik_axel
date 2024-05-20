@@ -10,15 +10,34 @@ pos_x0 = 0;
 pos_y0 = 0;
 
 % Total tid och diskretisering
-t_tot = 5;
-h = 0.00001;
+t_tot = 4; %5
+h = 0.000001; % lägsta möjliga 
 N = round(t_tot / h,0);
 
 % Beräkna hastigheter med RK4
-[X, Y] = RungeKutta(@(x_i, y_i, t) eDeriv(x_i, y_i, t, 9.82, 0.001, 0.001, 0.05, 0.08, 1, 0.08), e_x_0, e_y_0, h, N);
+%[X, Y] = RungeKutta(@(x_i, y_i, t) eDeriv(x_i, y_i, t, 9.82, 0.001, 0.001, 0.05, 0.08, 1, 0.08), e_x_0, e_y_0, h, N);
+
+% Euler
+[X, Y] = ForwardEuler(@(x_i, y_i, t) eDeriv(x_i, y_i, t, 9.82, 0.001, 0.001, 0.05, 0.08, 1, 0.08), e_x_0, e_y_0, h, N);
 
 % Beräkna positioner med Integrator
 [pos_X, pos_Y] = Integrator(X, Y, pos_x0, pos_y0, h, N);
+
+% Plotta resulatat
+    figure;
+    subplot(2, 1, 1);
+    plot(pos_X, pos_Y);
+    xlabel('X position');
+    ylabel('Y Position');
+    title('Raketbana');
+    grid on;
+
+    subplot(2, 1, 2);
+    plot(linspace(0, t_tot, N+1), sqrt(X.^2 + Y.^2));
+    xlabel('Time (s)');
+    ylabel('Speed (m/s)');
+    title('Rockethastighet vs tid');
+    grid on;
 
 % Plotta resultat
 % figure;
@@ -67,7 +86,9 @@ x_vertex = -b / (2 * a);
 y_max_interpolated = a * x_vertex^2 + b * x_vertex + c;
 
 % skriv över
-max_posY = y_max_interpolated
+max_posY = y_max_interpolated;
+fprintf('a) Max Y interpolerat:\n')
+disp(y_max_interpolated)
 %-------------------------------------------------------------------
 
 
@@ -113,7 +134,7 @@ disp(x_intersections);
 
 %% Felanalys
 % Steg 1: Numeriska metodens fel
-h_values = [0.00001, 0.000005];
+h_values = [0.000001, 0.0000005]; % lägsta möjliga
 errors_num = zeros(2, length(h_values));
 
 for h_index = 1:length(h_values)
@@ -121,7 +142,10 @@ for h_index = 1:length(h_values)
     N = round(t_tot / h,0);
 
     % Beräkna hastigheter med RK4
-    [X, Y] = RungeKutta(@(x_i, y_i, t) eDeriv(x_i, y_i, t, 9.82, 0.001, 0.001, 0.05, 0.08, 1, 0.08), e_x_0, e_y_0, h, N);
+    %[X, Y] = RungeKutta(@(x_i, y_i, t) eDeriv(x_i, y_i, t, 9.82, 0.001, 0.001, 0.05, 0.08, 1, 0.08), e_x_0, e_y_0, h, N);
+    
+    %Euler
+    [X, Y] = ForwardEuler(@(x_i, y_i, t) eDeriv(x_i, y_i, t, 9.82, 0.001, 0.001, 0.05, 0.08, 1, 0.08), e_x_0, e_y_0, h, N);
 
     % Beräkna positioner med Integrator
     [pos_X, pos_Y] = Integrator(X, Y, pos_x0, pos_y0, h, N);
@@ -158,7 +182,7 @@ for h_index = 1:length(h_values)
     y_max_interpolated = a * x_vertex^2 + b * x_vertex + c;
     
     % skriv över
-    max_posYnum = y_max_interpolated
+    max_posYnum = y_max_interpolated;
     %------------------------------------------------------------------
 
     zero_crossings = [];
@@ -211,8 +235,10 @@ for param_index = 1:length(params)
     e_y_0_pert = sin(angle_pert) * v_0_pert;
 
     % Beräkna hastigheter med RK4
-    [X, Y] = RungeKutta(@(x_i, y_i, t) eDeriv(x_i, y_i, t, g_pert, k_x_pert, k_y_pert, m_0_pert, bryttid_pert, F_max_pert, k_pert), e_x_0_pert, e_y_0_pert, h, N);
+    %[X, Y] = RungeKutta(@(x_i, y_i, t) eDeriv(x_i, y_i, t, g_pert, k_x_pert, k_y_pert, m_0_pert, bryttid_pert, F_max_pert, k_pert), e_x_0_pert, e_y_0_pert, h, N);
 
+    %Euler
+    [X, Y] = ForwardEuler(@(x_i, y_i, t) eDeriv(x_i, y_i, t, g_pert, k_x_pert, k_y_pert, m_0_pert, bryttid_pert, F_max_pert, k_pert), e_x_0_pert, e_y_0_pert, h, N);
     % Beräkna positioner med Integrator
     [pos_X, pos_Y] = Integrator(X, Y, pos_x0, pos_y0, h, N);
 
@@ -308,6 +334,20 @@ function [X, Y] = RungeKutta(f, vx0, vy0, h, N)
         [K4x, K4y] = f(X(i) + h * K3x, Y(i) + h * K3y, t + h);
         X(i+1) = X(i) + (h/6) * (K1x + 2*K2x + 2*K3x + K4x);
         Y(i+1) = Y(i) + (h/6) * (K1y + 2*K2y + 2*K3y + K4y);
+        t = t + h;
+    end
+end
+
+function [X, Y] = ForwardEuler(f, vx0, vy0, h, N)
+    X = zeros(1, N+1);
+    Y = zeros(1, N+1);
+    X(1) = vx0;
+    Y(1) = vy0;
+    t = 0;
+    for i = 1:N
+        [Kx, Ky] = f(X(i), Y(i), t);
+        X(i+1) = X(i) + h * Kx;
+        Y(i+1) = Y(i) + h * Ky;
         t = t + h;
     end
 end

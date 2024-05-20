@@ -40,7 +40,7 @@ for param_index = 0:length(params)
     pos_y0 =0;
 
     % inskjut initial, T TOlerans
-    T = 0.0000001;  
+    T = 1e-13; %lägsta
     x_target = 7.5;
     y_target = 15;
     
@@ -57,9 +57,10 @@ for param_index = 0:length(params)
     A_last  = eye(2,2);
     
     for i = 1:100
+        disp(i)
         % Tid and diskert
-        t_tot = 18;
-        h = 0.00001;
+        t_tot = 4;
+        h = 0.000001; %lägsta
         N = ceil(t_tot / h);
     
         % vinkelberäkning beror
@@ -68,7 +69,10 @@ for param_index = 0:length(params)
        
     
         % Runge kutta
-        [X, Y] = RungeKutta(@(x_i, y_i, t) eDeriv(x_i, y_i, t, g, k_x, k_y, m_0, bryttid, z(1), k), e_x_0, e_y_0, h, N);
+        %[X, Y] = RungeKutta(@(x_i, y_i, t) eDeriv(x_i, y_i, t, g, k_x, k_y, m_0, bryttid, z(1), k), e_x_0, e_y_0, h, N);
+
+        %Euler
+        [X, Y] = ForwardEuler(@(x_i, y_i, t) eDeriv(x_i, y_i, t, g, k_x, k_y, m_0, bryttid, z(1), k), e_x_0, e_y_0, h, N);
         
         % poisitoner
         [pos_X, pos_Y] = Integrate(X, Y, 0, 0, h, N);
@@ -184,12 +188,17 @@ for param_index = 0:length(params)
             disp(['E_y: ', num2str(E_y,10)]);
             disp(['pos_X_landing: ', num2str(pos_X_landing,15)]);
             disp(['pos_Y_max: ', num2str(pos_Y_max,15)]);
+            error_F = abs(sum(z(1) - original_F));
+            error_angle = abs(sum(z(2) - original_angle));
+            disp(['Inputfel F: ', num2str(error_F,15)])
+            disp(['Inputfel vinkel: ', num2str(error_angle,15)])
             disp('---------------------------------------------')
             break
         end
     end
+
     input_error_F = input_error + abs(sum(z(1) - original_F));
-    input_error_ang = input_error + abs(sum(z(2) - original_F));
+    input_error_ang = input_error + abs(sum(z(2) - original_angle));
 end
 fprintf('input störningsanalys:\n');
 disp(['F: ', num2str(input_error_F,15)])
@@ -229,6 +238,20 @@ end
 %         t = t + h;
 %     end
 % end
+
+function [X, Y] = ForwardEuler(f, vx0, vy0, h, N)
+    X = zeros(1, N + 1);
+    Y = zeros(1, N + 1);
+    X(1) = vx0;
+    Y(1) = vy0;
+    t = 0;
+    for i = 1:N
+        [Kx, Ky] = f(X(i), Y(i), t);
+        X(i+1) = X(i) + h * Kx;
+        Y(i+1) = Y(i) + h * Ky;
+        t = t + h;
+    end
+end
 
 function [posX, posY] = Integrate(vx, vy, pos_x0, pos_y0, h, N)
     posX = zeros(1, N+1);

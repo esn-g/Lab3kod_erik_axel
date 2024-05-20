@@ -21,7 +21,7 @@ for h_index = 1:length(h_values)
     F_last = 1;
     
     for i = 1:100 
-        disp(i)
+        disp('')
         % Tid and diskert
         t_tot = 5;
         N = ceil(t_tot / h);

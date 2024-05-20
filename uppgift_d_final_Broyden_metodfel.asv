@@ -1,6 +1,6 @@
 format longE
 
-h_values = [0.000001, 0.0000005]; %lägsta med euler
+h_values = [0.00001, 0.000005];
 error_num = zeros(2);
 
 for h_index = 1:length(h_values)
@@ -15,7 +15,7 @@ for h_index = 1:length(h_values)
     pos_y0 =0;
     
     % inskjut initial, T TOlerans
-    T = 1e-13; %lägs
+    T = 1e-13;  
     x_target = 7.5;
     y_target = 15;
     
@@ -34,7 +34,7 @@ for h_index = 1:length(h_values)
     for i = 1:100
         disp(i)
         % Tid and diskert
-        t_tot = 4;
+        t_tot = 18;
         N = ceil(t_tot / h);
     
         % vinkelberäkning beror
@@ -72,7 +72,7 @@ for h_index = 1:length(h_values)
         [pos_Y_max, maxIndex] = max(pos_Y);
         %----------------------------interpolera-----------------------------
         % välj ett fönster att interpolera i 
-        half_window_size = 40*h_index;
+        half_window_size = 4*h_index;
         start_index = max(1, maxIndex - half_window_size);
         end_index = min(length(pos_X), maxIndex + half_window_size - 1);
         
@@ -142,21 +142,6 @@ for h_index = 1:length(h_values)
         error_num(h_index,:) = z; % Anta att den första intersektionen är landningspunkten
   
         if abs(E) < abs(T)
-            %Plotta resultat
-            figure;
-            subplot(2, 1, 1);
-            plot(pos_X, pos_Y);
-            xlabel('X position');
-            ylabel('Y Position');
-            title('Raketbana');
-            grid on;
-
-            subplot(2, 1, 2);
-            plot(linspace(0, t_tot, N+1), sqrt(X.^2 + Y.^2));
-            xlabel('Tid (s)');
-            ylabel('Hastighet (m/s)');
-            title('Rakhastighet vs Tid');
-            grid on;
             disp(['Tolerance aquired'])
             disp(['Iteration: ', num2str(i)]);
             disp(['F: ', num2str(z(1),10)]);

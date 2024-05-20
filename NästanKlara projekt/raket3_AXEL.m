@@ -11,7 +11,7 @@ function rocket_simulation
     pos_y0 =0;
 
     % Tids inst and diskretisering
-    t_tot = 5;
+    t_tot = 4;
     h = 0.0001;
     N = t_tot / h;
 
