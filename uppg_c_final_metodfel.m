@@ -60,7 +60,7 @@ for h_index = 1:length(h_values)
         F_last = F;
     
         F = F - E/dFdx;
-        
+
         E_last = E;
         
         error_num(h_index) = F; % Anta att den första intersektionen är landningspunkten
@@ -76,7 +76,16 @@ for h_index = 1:length(h_values)
     end
 end  
 error= abs(error_num(2)- error_num(1));
-disp(['Numeriskt fel för F: ', num2str(error)])
+disp(['Numeriskt fel för F: ', num2str(error,15)])
+
+% Beräkna felordningen för varje metod
+p_Y = abs(log2(errors_num(1, 1)) / log2(errors_num(1, 2)));
+p_X = abs(log2(errors_num(2, 1)) / log2(errors_num(2, 2)));
+
+% Presentera resultaten
+disp(['Felordning för Max Y-position: ', num2str(p_Y,20)]);
+disp(['Felordning för X-intersektion: ', num2str(p_X,20)]);
+
 
 
 function [X, Y] = ForwardEuler(f, vx0, vy0, h, N, F)

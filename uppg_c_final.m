@@ -16,7 +16,8 @@ F = 0.9;
 E_last = 2;
 F_last = 1;
 
-
+E_vect = [];
+Conv_order_vect = [];
 
 for i = 1:100 
     disp(i)
@@ -32,10 +33,10 @@ for i = 1:100
     % poisitoner
     [pos_X, pos_Y] = Integrate(X, Y, 0, 0, h, N);
     
-    % Detect indices where sign changes KOLLA ÖVER 
+    % sök teckenbyte
     for j = 1:length(pos_Y)-1
         if pos_Y(j) * pos_Y(j+1) < 0
-            idx = j; % Append the index to idx
+            idx = j; % lägg till index to idx
         end
     end
 
@@ -56,18 +57,30 @@ for i = 1:100
     F_last = F;
 
     F = F - E/dFdx;
+
+    E_vect = [E_vect; log10(abs(E-E_last))];
+
+    Conv_order = log(abs(E)) / log(abs(E_last));
+
+    Conv_order_vect = [Conv_order_vect; Conv_order]
     
     E_last = E;
 
     if abs(E) < abs(T)
         disp(['E: ', num2str(E)])
         disp(['Iteration: ', num2str(i)]);
-        disp(['F: ', num2str(F)]);
+        disp(['F: ', num2str(F,15)]);
         disp(['pos_X_landing: ', num2str(pos_X_landing)]);
         disp('----------------------------');
         break
     end
 end
+E_vect= E_vect(3:end);
+iterations = 1:length(E_vect);
+plot(iterations, E_vect);
+
+final_conv = mean(Conv_order_vect(4:end))
+
 
 
 function [X, Y] = ForwardEuler(f, vx0, vy0, h, N, F)

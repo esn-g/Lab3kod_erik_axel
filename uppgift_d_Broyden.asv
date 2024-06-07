@@ -26,9 +26,7 @@ A_last  = eye(2,2);
 
 E_X_vect = [];
 E_Y_vect = [];
-
-Conv_order_vect_x = [];
-Conv_order_vect_y = [];
+Conv
 
 for i = 1:100
     disp(i)
@@ -119,12 +117,6 @@ for i = 1:100
     
     E_X_vect = [E_X_vect; abs(E_x-E_last)];
     E_Y_vect = [E_Y_vect; abs(E_y)];
-
-    Conv_order_x = log(abs(E_x)) / log(abs(E_x_last));
-    Conv_order_y = log(abs(E_y)) / log(abs(E_y_last));
-
-    Conv_order_vect_x =[Conv_order_vect_x; Conv_order_x]
-    Conv_order_vect_y =[Conv_order_vect_y; Conv_order_y]
     % spara nuvarande värden innan uppdatering
     F_last = F;
     E_x_last = E_x;
@@ -169,9 +161,6 @@ plot(iterations_X, E_X_vect, 'r');
 hold on;
 plot(iterations_Y, E_Y_vect, 'b');
 hold on;
-
-final_conv_x = mean(Conv_order_vect_x(10:end))
-final_conv_y = mean(Conv_order_vect_y(10:end))
 
 
 

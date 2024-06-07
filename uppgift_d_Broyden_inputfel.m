@@ -1,6 +1,6 @@
 format longE
 
-% base values
+% bas värden
 v_0 = 20;
 g = 9.82;
 k_x = 0.001;
@@ -12,13 +12,13 @@ params = {'g', 'k_x', 'k_y', 'm_0', 'bryttid', 'v_0', 'k'};
 base_values = [g, k_x, k_y, m_0, bryttid, v_0, k];
 perturbation = 0.01; % 1% perturbation
 
-% Store the original values
 original_F = 0;
 
 F_pert_list = zeros(1,length(params));
-input_error = 0;
+input_error_F = 0;
+input_error_ang = 0;
 
-% Loop over each parameter to perturb and analyze the effect
+% Loopa över paramerar och stör en i taget
 for param_index = 0:length(params)
     perturbed_values = base_values;
     
@@ -26,7 +26,7 @@ for param_index = 0:length(params)
         perturbed_values(param_index) = base_values(param_index) * (1 + perturbation);
     end
     
-    % Extract perturbed parameters
+    % ta ut störda parametraar
     g = perturbed_values(1);
     k_x = perturbed_values(2);
     k_y = perturbed_values(3);
@@ -77,10 +77,10 @@ for param_index = 0:length(params)
         % poisitoner
         [pos_X, pos_Y] = Integrate(X, Y, 0, 0, h, N);
         
-        % Detect indices where sign changes
+        % sök teckenbyte
         for j = 1:length(pos_Y)-1
             if pos_Y(j) * pos_Y(j+1) < 0
-                idx = j; % Append the index to idx
+                idx = j; % lägg till index to idx
             end
         end
         
@@ -89,14 +89,14 @@ for param_index = 0:length(params)
         x1 = pos_X(idx + 1);
         y1 = pos_Y(idx + 1);
 
-        t_factor = -y0 / (y1 - y0); % Linear interpolation
+        t_factor = -y0 / (y1 - y0); % Linjär interpolation
         pos_X_landing = x0 + (x1 - x0) * t_factor;
         
 
         [pos_Y_max, maxIndex] = max(pos_Y);
         %----------------------------interpolera-----------------------------
         % välj ett fönster att interpolera i 
-        half_window_size = 20;
+        half_window_size = 1;
         start_index = max(1, maxIndex - half_window_size);
         end_index = min(length(pos_X), maxIndex + half_window_size - 1);
         
@@ -163,24 +163,17 @@ for param_index = 0:length(params)
     
         z = [F;angle];
         
-        %isp(['Iteration: ', num2str(i)]);
-        % disp(['F: ', num2str(z(1))]);
-        % disp(['angle: ', num2str(rad2deg(z(2)))]);
-        % disp(['E_x: ', num2str(E_x)]);
-        % disp(['E_y: ', num2str(E_y)]);
-        % disp(['pos_X_landing: ', num2str(pos_X_landing)]);
-        % disp(['pos_Y_max: ', num2str(pos_Y_max)]);
-        % disp('---------------------------------------------')
+       
     
         if abs(E) < abs(T)
             if param_index == 0
                 original_F = z(1);
-                original_angle = z(2)
-                disp('Original (no perturbation):');
+                original_angle = z(2);
+                disp('Original (ingen perturbation):');
             else
-                disp(['Perturbed parameter: ', params{param_index}]);
+                disp(['Perbuterad parameter: ', params{param_index}]);
             end
-            disp(['Tolerance acuireq'])
+            disp(['Tolerans uppnåd'])
             disp(['Iteration: ', num2str(i)]);
             disp(['F: ', num2str(z(1),10)]);
             disp(['angle: ', num2str(rad2deg(z(2)),10)]);
@@ -197,8 +190,8 @@ for param_index = 0:length(params)
         end
     end
 
-    input_error_F = input_error + abs(sum(z(1) - original_F));
-    input_error_ang = input_error + abs(sum(z(2) - original_angle));
+    input_error_F = input_error_F + abs(sum(z(1) - original_F));
+    input_error_ang = input_error_ang + abs(sum(z(2) - original_angle));
 end
 fprintf('input störningsanalys:\n');
 disp(['F: ', num2str(input_error_F,15)])
@@ -221,23 +214,7 @@ function [X, Y] = RungeKutta(f, vx0, vy0, h, N)
     end
 end
 
-% 
-% function [X, Y] = RungeKutta(f, vx0, vy0, h, N, F)
-%     X = zeros(1, N+1);
-%     Y = zeros(1, N+1);
-%     X(1) = vx0;
-%     Y(1) = vy0;
-%     t = 0;
-%     for i = 1:N
-%         [K1x, K1y] = f(X(i), Y(i), t, F);
-%         [K2x, K2y] = f(X(i) + h/2 * K1x, Y(i) + h/2 * K1y, t + h/2, F);
-%         [K3x, K3y] = f(X(i) + h/2 * K2x, Y(i) + h/2 * K2y, t + h/2, F);
-%         [K4x, K4y] = f(X(i) + h * K3x, Y(i) + h * K3y, t + h, F);
-%         X(i+1) = X(i) + (h/6) * (K1x + 2*K2x + 2*K3x + K4x);
-%         Y(i+1) = Y(i) + (h/6) * (K1y + 2*K2y + 2*K3y + K4y);
-%         t = t + h;
-%     end
-% end
+
 
 function [X, Y] = ForwardEuler(f, vx0, vy0, h, N)
     X = zeros(1, N + 1);
@@ -280,25 +257,3 @@ function [e_x_prim, e_y_prim] = eDeriv(x_i, y_i, t, g, k_x, k_y, m_0, bryttid, F
 end
 
 
-% function [e_x_prim, e_y_prim] = eDeriv(x_i, y_i, t, F)
-%     % F = F;
-%     k_x = 0.001;
-%     k_y = 0.001;
-%     g = 9.82;
-%     m_0 = 0.05;
-%     k = 0.08;
-% 
-%     % size(x_i)
-%     V = sqrt(x_i^2 + y_i^2);
-%     phi = atan2(y_i, x_i);
-%     if t <= 0.08
-%         m = m_0 - (k * t);
-%         F = F;
-%     else
-%         F = 0;
-%         m = m_0 - (k * 0.08);
-%     end
-% 
-%     e_x_prim = (F * cos(phi) - k_x * x_i * V) / m;
-%     e_y_prim = ((F * sin(phi) - k_y * y_i * V) / m) - g;
-% end

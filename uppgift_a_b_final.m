@@ -39,21 +39,6 @@ N = round(t_tot / h,0);
     title('Rockethastighet vs tid');
     grid on;
 
-% Plotta resultat
-% figure;
-% subplot(2, 1, 1);
-% plot(pos_X, pos_Y);
-% xlabel('X position');
-% ylabel('Y Position');
-% title('Raketbana');
-% grid on;
-% 
-% subplot(2, 1, 2);
-% plot(linspace(0, t_tot, N+1), sqrt(X.^2 + Y.^2));
-% xlabel('Tid (s)');
-% ylabel('Hastighet (m/s)');
-% title('Rakhastighet vs Tid');
-% grid on;
 
 %% a) Max Y position
 [max_posY, maxIndex] = max(pos_Y);
@@ -91,22 +76,6 @@ fprintf('a) Max Y interpolerat:\n')
 disp(y_max_interpolated)
 %-------------------------------------------------------------------
 
-
-% % plo
-% x_fit = linspace(min(x_points), max(x_points), 1000);
-% y_fit = a * x_fit.^2 + b * x_fit + c;
-% 
-% figure;
-% plot(pos_X, pos_Y, 'b', 'DisplayName', 'Original Data');
-% hold on;
-% plot(x_points, y_points, 'ro', 'DisplayName', 'Selected Points (1000)');
-% plot(x_fit, y_fit, 'r--', 'DisplayName', 'Fitted Parabola');
-% plot(x_vertex, y_max_interpolated, 'gx', 'MarkerSize', 10, 'DisplayName', 'Interpolated Max Y');
-% xlabel('X position');
-% ylabel('Y Position');
-% title('Parabolic Interpolation using 1000 Points');
-% legend('show');
-% grid on;
 
 %% b) X-intersektioner när Y = 0
 zero_crossings = [];
@@ -155,7 +124,7 @@ for h_index = 1:length(h_values)
     [max_posYnum, maxIndex] = max(pos_Y);
 
     % välj ett fönster att interpolera i 
-    half_window_size = 20;
+    half_window_size = 1;
     start_index = max(1, maxIndex - half_window_size);
     end_index = min(length(pos_X), maxIndex + half_window_size - 1);
     
@@ -208,9 +177,22 @@ for h_index = 1:length(h_values)
     errors_num(1, h_index) = max_posYnum;
     errors_num(2, h_index) = x_intersectionsNum(2); % Anta att den första intersektionen är landningspunkten
 end
-
+% Skriv ut num_error_bound
 num_error_bound = max(abs(diff(errors_num, 1, 2)), [], 2);
+disp('Numeriska felgränser:');
+disp(num_error_bound);
 
+
+% Beräkna felordningen för varje metod
+p_Y = abs(log2(errors_num(1, 1)) / log2(errors_num(1, 2)));
+p_X = abs(log2(errors_num(2, 1)) / log2(errors_num(2, 2)));
+
+% Presentera resultaten
+disp(['Felordning för Max Y-position: ', num2str(p_Y, 20)]);
+disp(['Felordning för X-intersektion: ', num2str(p_X, 20)]);
+
+
+%%
 % Steg 2: Osäkerhet i indata
 params = {'angle', 'g', 'k_x', 'k_y', 'm_0', 'bryttid', 'v_0', 'F_max', 'k'};
 base_values = [angle, 9.82, 0.001, 0.001, 0.05, 0.08, v_0, 1, 0.08];

@@ -72,7 +72,7 @@ for h_index = 1:length(h_values)
         [pos_Y_max, maxIndex] = max(pos_Y);
         %----------------------------interpolera-----------------------------
         % välj ett fönster att interpolera i 
-        half_window_size = 40*h_index;
+        half_window_size = 1;
         start_index = max(1, maxIndex - half_window_size);
         end_index = min(length(pos_X), maxIndex + half_window_size - 1);
         
@@ -175,6 +175,15 @@ end
 error = abs(error_num(2,:)- error_num(1,:));
 disp(['Numeriskt fel för F: ', num2str(error(1),15)])
 disp(['Numeriskt fel för vinkel: ', num2str(error(2),15)])
+
+% Beräkna felordningen för varje metod
+p_Y = abs(log2(errors_num(1, 1)) / log2(errors_num(1, 2)));
+p_X = abs(log2(errors_num(2, 1)) / log2(errors_num(2, 2)));
+
+% Presentera resultaten
+disp(['Felordning för Max Y-position: ', num2str(p_Y)]);
+disp(['Felordning för X-intersektion: ', num2str(p_X)]);
+
 
 function [X, Y] = RungeKutta(f, vx0, vy0, h, N, F)
     X = zeros(1, N+1);
